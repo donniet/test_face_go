@@ -1,7 +1,7 @@
 package main
 
 /*
-#cgo LDFLAGS: -L../detect_faces/build/intel64/Debug/lib -ldetector -lclassifier -lmulti_modal
+#cgo LDFLAGS: -L../detect_faces/build/armv7l/Release/lib -ldetector -lclassifier -lmulti_modal
 
 #include <stdio.h>
 
@@ -118,7 +118,7 @@ type Distribution struct {
 
 func NewMultiModal(dimensions int, maximumNodes int) MultiModal {
 	return MultiModal{
-		wrapper: C.mm_create(C.ulong(dimensions), C.ulong(maximumNodes)),
+		wrapper: C.mm_create(C.uint(dimensions), C.uint(maximumNodes)),
 	}
 }
 func (mm MultiModal) Close() {
@@ -129,24 +129,24 @@ func (mm MultiModal) Insert(vector []float32) {
 	for i, f := range vector {
 		dat[i] = C.float(f)
 	}
-	C.mm_insert(mm.wrapper, &dat[0], C.ulong(len(vector)))
+	C.mm_insert(mm.wrapper, &dat[0], C.uint(len(vector)))
 }
 func (mm MultiModal) Count() int {
 	return int(C.mm_get_count(mm.wrapper))
 }
 func (mm MultiModal) Peaks() []Distribution {
 	var dist *C.distribution_wrapper
-	var count C.ulong
+	var count C.uint
 	var ret []Distribution
 
 	C.mm_extract_peaks(mm.wrapper, &dist, &count)
 
 	for i := 0; i < int(count); i++ {
-		d := C.get_peak(dist, C.ulong(i))
+		d := C.get_peak(dist, C.uint(i))
 
 		mean := make([]float32, mm.wrapper.dimensions)
 		for j := 0; j < int(mm.wrapper.dimensions); j++ {
-			mean[j] = float32(C.get_element(d.mean, C.ulong(j)))
+			mean[j] = float32(C.get_element(d.mean, C.uint(j)))
 		}
 
 		ret = append(ret, Distribution{
@@ -328,14 +328,14 @@ func (c *classifier) Close() {
 func (c *classifier) InferRGB24(rgb *RGB24) classifier_response {
 	res := C.do_classification(c.classer, unsafe.Pointer(&rgb.Pix[0]), C.int(rgb.Stride),
 		C.int(rgb.Rect.Min.X), C.int(rgb.Rect.Min.Y), C.int(rgb.Rect.Max.X), C.int(rgb.Rect.Max.Y))
-	// res := C.do_classification_param(c.classer, unsafe.Pointer(&rgb.Pix[0]), C.ulong(rgb.Bounds().Dx()), C.ulong(rgb.Bounds().Dy()))
+	// res := C.do_classification_param(c.classer, unsafe.Pointer(&rgb.Pix[0]), C.uint(rgb.Bounds().Dx()), C.uint(rgb.Bounds().Dy()))
 	defer C.destroy_classifier_response(res)
 
 	ret := classifier_response{
 		Duration: float32(res.duration),
 	}
 
-	for i := C.ulong(0); i < res.embedding_size; i++ {
+	for i := C.uint(0); i < res.embedding_size; i++ {
 		ret.Embedding = append(ret.Embedding, float32(C.get_embedding_at(res.embedding, C.int(i))))
 	}
 
@@ -421,15 +421,15 @@ func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
 
 func main() {
 	det := NewDetector(
-		"../detect_faces/face-detection-model/FP32/face-detection-adas-0001.xml",
-		"../detect_faces/face-detection-model/FP32/face-detection-adas-0001.bin",
-		"CPU")
+		"../detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
+		"../detect_faces/face-detection-model/FP16/face-detection-adas-0001.bin",
+		"MYRIAD")
 	defer det.Close()
 
 	classer := NewClassifier(
-		"../detect_faces/facenet-model/FP32/20180402-114759.xml",
-		"../detect_faces/facenet-model/FP32/20180402-114759.bin",
-		"CPU")
+		"../detect_faces/facenet-model/FP16/20180402-114759.xml",
+		"../detect_faces/facenet-model/FP16/20180402-114759.bin",
+		"MYRIAD")
 	defer classer.Close()
 
 	multiModal := NewMultiModal(512, 1024)
