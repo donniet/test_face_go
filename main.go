@@ -102,6 +102,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"time"
 	"unsafe"
 
 	"image/jpeg"
@@ -419,6 +420,20 @@ func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
 	return image.Rect(r.Min.X-dx, r.Min.Y-dy, r.Max.X+dx, r.Max.Y+dy)
 }
 
+func encodeEmbedding(embedding []float32) string {
+	bb := make([]byte, 512/8)
+	for i, f := range embedding {
+		index := i / 8
+		var bit uint = uint(i) % 8
+
+		if f > 0. {
+			bb[index] |= 1 << bit
+		}
+	}
+	// log.Printf("hash: %s", base64.StdEncoding.EncodeToString(bb))
+	return hex.EncodeToString(bb)
+}
+
 func main() {
 	det := NewDetector(
 		"../detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
@@ -441,6 +456,9 @@ func main() {
 	}
 
 	item := 0
+
+	lastPeaks := time.Now()
+	peakInterval := 1 * time.Minute
 
 	for {
 		if rgb, err := reader.ReadRGB24(); err != nil {
@@ -478,17 +496,19 @@ func main() {
 				// log.Printf("classification duration: %f ms", classification.Duration)
 				// log.Printf("embedding: %v", classification.Embedding)
 
-				bb := make([]byte, 512/8)
-				for i, f := range classification.Embedding {
-					index := i / 8
-					var bit uint = uint(i) % 8
-
-					if f > 0. {
-						bb[index] |= 1 << bit
-					}
-				}
 				// log.Printf("hash: %s", base64.StdEncoding.EncodeToString(bb))
-				log.Printf("hex: %s", hex.EncodeToString(bb))
+				log.Printf("hex: %s", encodeEmbedding(classification.Embedding))
+
+				if time.Now().Sub(lastPeaks) > peakInterval {
+					lastPeaks = time.Now()
+					peaks := multiModal.Peaks()
+
+					log.Printf("number of people found: %d", len(peaks))
+					for _, p := range peaks {
+						log.Printf("%d %d %s", p.count, p.stdDev, encodeEmbedding(p.mean))
+					}
+
+				}
 
 			}
 		}
