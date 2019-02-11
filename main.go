@@ -505,7 +505,8 @@ func main() {
 
 					log.Printf("number of people found: %d", len(peaks))
 					for _, p := range peaks {
-						log.Printf("%d %d %s", p.count, p.stdDev, encodeEmbedding(p.mean))
+						log.Printf("%d %f %s", p.count, p.stdDev)
+						log.Printf("hex: %s", encodeEmbedding(p.mean))
 					}
 
 				}
