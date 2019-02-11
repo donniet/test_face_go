@@ -95,10 +95,12 @@ import "C"
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -112,9 +114,9 @@ type MultiModal struct {
 	wrapper *C.multi_modal_wrapper
 }
 type Distribution struct {
-	mean   []float32
-	stdDev float32
-	count  int
+	Mean   []float32
+	StdDev float32
+	Count  int
 }
 
 func NewMultiModal(dimensions int, maximumNodes int) MultiModal {
@@ -147,13 +149,13 @@ func (mm MultiModal) Peaks() []Distribution {
 
 		mean := make([]float32, mm.wrapper.dimensions)
 		for j := 0; j < int(mm.wrapper.dimensions); j++ {
-			mean[j] = float32(C.get_element(d.mean, C.uint(j)))
+			mean[j] = float32(C.get_element(d.Mean, C.uint(j)))
 		}
 
 		ret = append(ret, Distribution{
-			mean:   mean,
-			stdDev: float32(d.standard_deviation),
-			count:  int(d.sample_count),
+			Mean:   mean,
+			StdDev: float32(d.standard_deviation),
+			Count:  int(d.sample_count),
 		})
 	}
 
@@ -505,10 +507,12 @@ func main() {
 
 					log.Printf("number of people found: %d", len(peaks))
 					for _, p := range peaks {
-						log.Printf("%d %f %s", p.count, p.stdDev)
-						log.Printf("hex: %s", encodeEmbedding(p.mean))
+						log.Printf("%d %f %s", p.Count, p.StdDev)
+						log.Printf("hex: %s", encodeEmbedding(p.Mean))
 					}
 
+					peakBytes := json.Marshal(peaks)
+					ioutil.WriteFile("peaks.json", peakBytes, 0664)
 				}
 
 			}
