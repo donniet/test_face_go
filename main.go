@@ -149,7 +149,7 @@ func (mm MultiModal) Peaks() []Distribution {
 
 		mean := make([]float32, mm.wrapper.dimensions)
 		for j := 0; j < int(mm.wrapper.dimensions); j++ {
-			mean[j] = float32(C.get_element(d.Mean, C.uint(j)))
+			mean[j] = float32(C.get_element(d.mean, C.uint(j)))
 		}
 
 		ret = append(ret, Distribution{
@@ -484,16 +484,22 @@ func main() {
 
 				face := rgb.SubImage(r)
 
-				if f, err := os.OpenFile(fmt.Sprintf("faces/face%05d.jpg", item), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
+				jpegName := fmt.Sprintf("faces/face%05d.jpg", item)
+				embeddingName := fmt.Sprintf("faces/face%05d.json", item)
+
+				if f, err := os.OpenFile(jpegName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
 					log.Print(err)
 					return
 				} else {
 					jpeg.Encode(f, face, &jpeg.Options{90})
-					item = (item + 1) % 1024
+					item = (item + 1) % 100000
 				}
 
 				classification := classer.InferRGB24(face.(*RGB24))
 				multiModal.Insert(classification.Embedding)
+
+				embeddingBytes, _ := json.Marshal(classification.Embedding)
+				ioutil.WriteFile(embeddingName, embeddingBytes, 0664)
 
 				// log.Printf("classification duration: %f ms", classification.Duration)
 				// log.Printf("embedding: %v", classification.Embedding)
@@ -511,7 +517,7 @@ func main() {
 						log.Printf("hex: %s", encodeEmbedding(p.Mean))
 					}
 
-					peakBytes := json.Marshal(peaks)
+					peakBytes, _ := json.Marshal(peaks)
 					ioutil.WriteFile("peaks.json", peakBytes, 0664)
 				}
 
