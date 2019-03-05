@@ -90,6 +90,11 @@ func main() {
 
 				face := rgb.SubImage(r)
 
+				classification := classer.InferRGB24(face.(*detector.RGB24))
+				multiModal.Insert(classification.Embedding)
+
+				embeddingBytes, _ := json.Marshal(classification.Embedding)
+
 				jpegName := fmt.Sprintf("faces/face%05d.jpg", item)
 				embeddingName := fmt.Sprintf("faces/face%05d.json", item)
 
@@ -101,10 +106,6 @@ func main() {
 					item = (item + 1) % 100000
 				}
 
-				classification := classer.InferRGB24(face.(*detector.RGB24))
-				multiModal.Insert(classification.Embedding)
-
-				embeddingBytes, _ := json.Marshal(classification.Embedding)
 				ioutil.WriteFile(embeddingName, embeddingBytes, 0664)
 
 				// log.Printf("classification duration: %f ms", classification.Duration)
