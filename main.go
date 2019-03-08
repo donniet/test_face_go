@@ -93,10 +93,20 @@ func main() {
 				classification := classer.InferRGB24(face.(*detector.RGB24))
 				multiModal.Insert(classification.Embedding)
 
+				dist := multiModal.Find(classification.Embedding)
+
 				embeddingBytes, _ := json.Marshal(classification.Embedding)
 
-				jpegName := fmt.Sprintf("faces/face%05d.jpg", item)
-				embeddingName := fmt.Sprintf("faces/face%05d.json", item)
+				os.MkdirAll("faces/unknown", 0770)
+				jpegName := fmt.Sprintf("faces/unknown/face%05d.jpg", item)
+				embeddingName := fmt.Sprintf("faces/unknown/face%05d.json", item)
+
+				if dist.Count > 100 && dist.Erf(classification.Embedding) < 0.25 {
+					os.MkdirAll(fmt.Sprintf("faces/%d", dist.Id), 0770)
+
+					jpegName = fmt.Sprintf("faces/%d/face%05d.jpg", dist.Id, item)
+					embeddingName = fmt.Sprintf("faces/%d/face%05d.json", dist.Id, item)
+				}
 
 				if f, err := os.OpenFile(jpegName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
 					log.Print(err)
