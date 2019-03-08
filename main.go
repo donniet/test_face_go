@@ -19,6 +19,8 @@ var (
 	image_height             = 384
 	num_channels             = 3
 	detectionPadding float32 = 1.275
+	maxError         float32 = 0.05
+	minSamples               = 100
 )
 
 func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
@@ -101,7 +103,7 @@ func main() {
 				jpegName := fmt.Sprintf("faces/unknown/face%05d.jpg", item)
 				embeddingName := fmt.Sprintf("faces/unknown/face%05d.json", item)
 
-				if dist.Count > 100 && dist.Erf(classification.Embedding) < 0.25 {
+				if dist.Count > minSamples && dist.Erf(classification.Embedding) < maxError {
 					os.MkdirAll(fmt.Sprintf("faces/%d", dist.Id), 0770)
 
 					jpegName = fmt.Sprintf("faces/%d/face%05d.jpg", dist.Id, item)
