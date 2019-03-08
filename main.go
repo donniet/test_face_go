@@ -103,7 +103,11 @@ func main() {
 				jpegName := fmt.Sprintf("faces/unknown/face%05d.jpg", item)
 				embeddingName := fmt.Sprintf("faces/unknown/face%05d.json", item)
 
-				if dist.Count > minSamples && dist.Erf(classification.Embedding) < maxError {
+				erf := dist.Erf(classification.Embedding)
+
+				log.Printf("nearest dist: %d prob %f", dist.Id, erf)
+
+				if dist.Count > minSamples && erf < maxError {
 					os.MkdirAll(fmt.Sprintf("faces/%d", dist.Id), 0770)
 
 					jpegName = fmt.Sprintf("faces/%d/face%05d.jpg", dist.Id, item)
