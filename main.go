@@ -19,8 +19,8 @@ var (
 	image_height             = 384
 	num_channels             = 3
 	detectionPadding float32 = 1.275
-	maxError         float32 = 0.05
-	minSamples               = 100
+	maxError         float32 = 0.3
+	minSamples               = 500
 )
 
 func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
