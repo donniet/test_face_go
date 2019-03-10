@@ -64,6 +64,8 @@ func main() {
 		log.Printf("error opening save file: %v, continuing empty", err)
 	} else if _, err := multiModal.ReadFrom(f); err != nil {
 		log.Fatal(err)
+	} else {
+		f.Close()
 	}
 
 	defer multiModal.Close()
@@ -156,6 +158,8 @@ func main() {
 						log.Fatal(err)
 					} else if _, err := multiModal.WriteTo(f); err != nil {
 						log.Fatal(err)
+					} else {
+						f.Close()
 					}
 				}
 
