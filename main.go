@@ -19,8 +19,9 @@ var (
 	image_height             = 384
 	num_channels             = 3
 	detectionPadding float32 = 1.275
-	maxError         float32 = 0.05
+	maxError         float32 = 0.1
 	minSamples               = 100
+	saveFile                 = "faces.multimodal"
 )
 
 func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
@@ -58,6 +59,13 @@ func main() {
 	defer classer.Close()
 
 	multiModal := detector.NewMultiModal(512, 1024)
+
+	if f, err := os.OpenFile(saveFile, os.O_RDONLY, 0660); err != nil {
+		log.Printf("error opening save file: %v, continuing empty", err)
+	} else if _, err := multiModal.ReadFrom(f); err != nil {
+		log.Fatal(err)
+	}
+
 	defer multiModal.Close()
 
 	reader := detector.RGB24Reader{
@@ -142,6 +150,13 @@ func main() {
 
 					peakBytes, _ := json.Marshal(peaks)
 					ioutil.WriteFile("peaks.json", peakBytes, 0664)
+
+					// writing out datastructure
+					if f, err := os.OpenFile(saveFile, os.O_TRUNC|os.O_CREATE, 0660); err != nil {
+						log.Fatal(err)
+					} else if _, err := multiModal.WriteTo(f); err != nil {
+						log.Fatal(err)
+					}
 				}
 
 			}
