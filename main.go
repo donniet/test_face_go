@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -22,7 +23,12 @@ var (
 	maxError         float32 = 0.15
 	minSamples               = 500
 	saveFile                 = "faces.multimodal"
+	device                   = "MYRIAD"
 )
+
+func init() {
+	flag.StringVar(&device, "device", device, "device name")
+}
 
 func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
 	dx := int(float32(r.Dx()) * (factor - 1.0) / 2)
@@ -45,17 +51,62 @@ func encodeEmbedding(embedding []float32) string {
 	return hex.EncodeToString(bb)
 }
 
-func main() {
-	det := detector.NewDetector(
-		"../detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
-		"../detect_faces/face-detection-model/FP16/face-detection-adas-0001.bin",
-		"MYRIAD")
-	defer det.Close()
+// func standardize(rgb *detector.RGB24) []float32 {
+// 	// calculate mean
+// 	sum := 0.
+// 	for _, p := range rgb.Pix {
+// 		sum += float64(p)
+// 	}
+// 	mean := sum / float64(len(rgb.Pix))
+// 	std := 0.
 
-	classer := detector.NewClassifier(
-		"../detect_faces/facenet-model/FP16/20180402-114759.xml",
-		"../detect_faces/facenet-model/FP16/20180402-114759.bin",
-		"MYRIAD")
+// 	for _, p := range rgb.Pix {
+// 		t := float64(p) - mean
+// 		std += t * t
+// 	}
+// 	std = math.Sqrt(std)
+// 	std_adj := math.Max(std, 1./math.Sqrt(float64(len(rgb.Pix))))
+
+// 	ret := make([]float32, len(rgb.Pix))
+// 	for i, p := range rgb.Pix {
+// 		ret[i] = float32((float64(p) - mean) / std_adj)
+// 	}
+// 	return ret
+// }
+
+func main() {
+	flag.Parse()
+
+	home := "/home/donniet"
+	home, _ = os.LookupEnv("HOME")
+
+	var det *detector.Detector
+	var classer *detector.Classifier
+
+	if device == "MYRIAD" {
+		det = detector.NewDetector(
+			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
+			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.bin",
+			"MYRIAD")
+		classer = detector.NewClassifier(
+			home+"/src/detect_faces/facenet-model/FP16/20180402-114759.xml",
+			home+"/src/detect_faces/facenet-model/FP16/20180402-114759.bin",
+			"MYRIAD")
+	} else {
+		det = detector.NewDetector(
+			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.xml",
+			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.bin",
+			"CPU")
+		classer = detector.NewClassifier(
+			home+"/src/detect_faces/facenet-model/FP32/20180402-114759.xml",
+			home+"/src/detect_faces/facenet-model/FP32/20180402-114759.bin",
+			"CPU")
+		// classer = detector.NewClassifier(
+		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.xml",
+		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.bin",
+		// 	"CPU")
+	}
+	defer det.Close()
 	defer classer.Close()
 
 	multiModal := detector.NewMultiModal(512, 1024)
@@ -154,7 +205,7 @@ func main() {
 					ioutil.WriteFile("peaks.json", peakBytes, 0664)
 
 					// writing out datastructure
-					if f, err := os.OpenFile(saveFile, os.O_TRUNC|os.O_CREATE, 0660); err != nil {
+					if f, err := os.OpenFile(saveFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0660); err != nil {
 						log.Fatal(err)
 					} else if _, err := multiModal.WriteTo(f); err != nil {
 						log.Fatal(err)

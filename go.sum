@@ -1,2 +1,4 @@
 github.com/donniet/detector v0.0.0-20190225161659-6481491bc9eb h1:LC2MGb+KlFiO6BNFpuktHeC7afuVuJQ79wWLPt4OnKw=
 github.com/donniet/detector v0.0.0-20190225161659-6481491bc9eb/go.mod h1:CmKQSuWWPKkpxJ+oAWOM8YjyGpuf9Tb9vH8ztcFNRcE=
+github.com/donniet/detector v0.0.0-20190314123017-239e7c2049ff h1:5iAAL2CRg/2lXAJ63U0WDDQqQz/ihZcMe9ykJLAf7SU=
+github.com/donniet/detector v0.0.0-20190314123017-239e7c2049ff/go.mod h1:CmKQSuWWPKkpxJ+oAWOM8YjyGpuf9Tb9vH8ztcFNRcE=
