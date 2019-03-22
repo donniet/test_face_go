@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"image"
+	"image/draw"
 	"image/jpeg"
 	"io/ioutil"
 	"log"
@@ -153,7 +154,12 @@ func main() {
 
 				face := rgb.SubImage(r)
 
-				classification := classer.InferRGB24(face.(*detector.RGB24))
+				// assume 160x160 for now, but get from the classer later
+				scaled := detector.NewRGB(image.Rect(0, 0, 160, 160))
+
+				draw.Draw(scaled, scaled.Bounds(), face, face.Bounds().Min, draw.Over)
+
+				classification := classer.InferRGB24(scaled)
 				multiModal.Insert(classification.Embedding)
 
 				dist := multiModal.Find(classification.Embedding)
@@ -179,7 +185,7 @@ func main() {
 					log.Print(err)
 					return
 				} else {
-					jpeg.Encode(f, face, &jpeg.Options{90})
+					jpeg.Encode(f, scaled, &jpeg.Options{90})
 					item = (item + 1) % 100000
 				}
 
