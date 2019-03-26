@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"image/draw"
 	"image/jpeg"
 	"io/ioutil"
 	"log"
@@ -17,8 +16,8 @@ import (
 )
 
 var (
-	image_width              = 672
-	image_height             = 384
+	image_width              = 1920
+	image_height             = 1080
 	num_channels             = 3
 	detectionPadding float32 = 1.275
 	maxError         float32 = 0.15
@@ -39,7 +38,7 @@ func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
 }
 
 func encodeEmbedding(embedding []float32) string {
-	bb := make([]byte, 512/8)
+	bb := make([]byte, len(embedding)/8)
 	for i, f := range embedding {
 		index := i / 8
 		var bit uint = uint(i) % 8
@@ -89,28 +88,44 @@ func main() {
 			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
 			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.bin",
 			"MYRIAD")
+		// classer = detector.NewClassifier(
+		// 	home+"/src/detect_faces/facenet-model/FP16/20180402-114759.xml",
+		// 	home+"/src/detect_faces/facenet-model/FP16/20180402-114759.bin",
+		// 	"MYRIAD")
+		// classer = detector.NewClassifier(
+		// 	home+"/Downloads/20180402-114759/facenet_fp16.xml",
+		// 	home+"/Downloads/20180402-114759/facenet_fp16.bin",
+		// 	"MYRIAD")
 		classer = detector.NewClassifier(
-			home+"/src/detect_faces/facenet-model/FP16/20180402-114759.xml",
-			home+"/src/detect_faces/facenet-model/FP16/20180402-114759.bin",
+			home+"/src/detect_faces/resnet50_128_caffe/FP16/resnet50_128.xml",
+			home+"/src/detect_faces/resnet50_128_caffe/FP16/resnet50_128.bin",
 			"MYRIAD")
 	} else {
 		det = detector.NewDetector(
 			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.xml",
 			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.bin",
 			"CPU")
-		classer = detector.NewClassifier(
-			home+"/src/detect_faces/facenet-model/FP32/20180402-114759.xml",
-			home+"/src/detect_faces/facenet-model/FP32/20180402-114759.bin",
-			"CPU")
+		// classer = detector.NewClassifier(
+		// 	home+"/Downloads/20180402-114759/facenet.xml",
+		// 	home+"/Downloads/20180402-114759/facenet.bin",
+		// 	"CPU")
+		// classer = detector.NewClassifier(
+		// 	home+"/src/detect_faces/facenet-model/FP32/20180402-114759.xml",
+		// 	home+"/src/detect_faces/facenet-model/FP32/20180402-114759.bin",
+		// 	"CPU")
 		// classer = detector.NewClassifier(
 		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.xml",
 		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.bin",
 		// 	"CPU")
+		classer = detector.NewClassifier(
+			home+"/src/detect_faces/resnet50_128_caffe/FP32/resnet50_128.xml",
+			home+"/src/detect_faces/resnet50_128_caffe/FP32/resnet50_128.bin",
+			"CPU")
 	}
 	defer det.Close()
 	defer classer.Close()
 
-	multiModal := detector.NewMultiModal(512, 1024)
+	multiModal := detector.NewMultiModal(128, 1024)
 
 	if f, err := os.OpenFile(saveFile, os.O_RDONLY, 0660); err != nil {
 		log.Printf("error opening save file: %v, continuing empty", err)
@@ -131,6 +146,8 @@ func main() {
 
 	lastPeaks := time.Now()
 	peakInterval := 1 * time.Minute
+
+	// scaler := draw.ApproxBiLinear
 
 	for {
 		if rgb, err := reader.ReadRGB24(); err != nil {
@@ -154,12 +171,14 @@ func main() {
 
 				face := rgb.SubImage(r)
 
-				// assume 160x160 for now, but get from the classer later
-				scaled := detector.NewRGB(image.Rect(0, 0, 160, 160))
+				// // assume 160x160 for now, but get from the classer later
+				// scaled := detector.NewRGB(image.Rect(0, 0, 160, 160))
 
-				draw.Draw(scaled, scaled.Bounds(), face, face.Bounds().Min, draw.Over)
+				// log.Printf("scaling %s to %s", face.Bounds(), scaled.Bounds())
+				// scaler.Scale(scaled, scaled.Bounds(), face, face.Bounds(), draw.Over, nil)
+				// // draw.Draw(scaled, scaled.Bounds(), face, face.Bounds().Min, draw.Over)
 
-				classification := classer.InferRGB24(scaled)
+				classification := classer.InferRGB24(face.(*detector.RGB24))
 				multiModal.Insert(classification.Embedding)
 
 				dist := multiModal.Find(classification.Embedding)
@@ -185,7 +204,7 @@ func main() {
 					log.Print(err)
 					return
 				} else {
-					jpeg.Encode(f, scaled, &jpeg.Options{90})
+					jpeg.Encode(f, face, &jpeg.Options{90})
 					item = (item + 1) % 100000
 				}
 
