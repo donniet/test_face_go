@@ -51,29 +51,6 @@ func encodeEmbedding(embedding []float32) string {
 	return hex.EncodeToString(bb)
 }
 
-// func standardize(rgb *detector.RGB24) []float32 {
-// 	// calculate mean
-// 	sum := 0.
-// 	for _, p := range rgb.Pix {
-// 		sum += float64(p)
-// 	}
-// 	mean := sum / float64(len(rgb.Pix))
-// 	std := 0.
-
-// 	for _, p := range rgb.Pix {
-// 		t := float64(p) - mean
-// 		std += t * t
-// 	}
-// 	std = math.Sqrt(std)
-// 	std_adj := math.Max(std, 1./math.Sqrt(float64(len(rgb.Pix))))
-
-// 	ret := make([]float32, len(rgb.Pix))
-// 	for i, p := range rgb.Pix {
-// 		ret[i] = float32((float64(p) - mean) / std_adj)
-// 	}
-// 	return ret
-// }
-
 func main() {
 	flag.Parse()
 
@@ -88,14 +65,6 @@ func main() {
 			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.xml",
 			home+"/src/detect_faces/face-detection-model/FP16/face-detection-adas-0001.bin",
 			"MYRIAD")
-		// classer = detector.NewClassifier(
-		// 	home+"/src/detect_faces/facenet-model/FP16/20180402-114759.xml",
-		// 	home+"/src/detect_faces/facenet-model/FP16/20180402-114759.bin",
-		// 	"MYRIAD")
-		// classer = detector.NewClassifier(
-		// 	home+"/Downloads/20180402-114759/facenet_fp16.xml",
-		// 	home+"/Downloads/20180402-114759/facenet_fp16.bin",
-		// 	"MYRIAD")
 		classer = detector.NewClassifier(
 			home+"/src/detect_faces/resnet50_128_caffe/FP16/resnet50_128.xml",
 			home+"/src/detect_faces/resnet50_128_caffe/FP16/resnet50_128.bin",
@@ -105,18 +74,6 @@ func main() {
 			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.xml",
 			home+"/src/detect_faces/face-detection-model/FP32/face-detection-adas-0001.bin",
 			"CPU")
-		// classer = detector.NewClassifier(
-		// 	home+"/Downloads/20180402-114759/facenet.xml",
-		// 	home+"/Downloads/20180402-114759/facenet.bin",
-		// 	"CPU")
-		// classer = detector.NewClassifier(
-		// 	home+"/src/detect_faces/facenet-model/FP32/20180402-114759.xml",
-		// 	home+"/src/detect_faces/facenet-model/FP32/20180402-114759.bin",
-		// 	"CPU")
-		// classer = detector.NewClassifier(
-		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.xml",
-		// 	home+"/src/Face-Recognition-with-OpenVino-Toolkit/model/20180402-114759.bin",
-		// 	"CPU")
 		classer = detector.NewClassifier(
 			home+"/src/detect_faces/resnet50_128_caffe/FP32/resnet50_128.xml",
 			home+"/src/detect_faces/resnet50_128_caffe/FP32/resnet50_128.bin",
