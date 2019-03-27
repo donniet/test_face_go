@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,18 +17,26 @@ import (
 )
 
 var (
-	image_width              = 1920
-	image_height             = 1088
-	num_channels             = 3
-	detectionPadding float32 = 1.275
-	maxError         float32 = 0.15
-	minSamples               = 500
-	saveFile                 = "faces.multimodal"
-	device                   = "MYRIAD"
+	image_width      = 1920
+	image_height     = 1088
+	num_channels     = 3
+	detectionPadding = 1.275
+	maxError         = 0.15
+	minSamples       = 500
+	saveFile         = "faces.multimodal"
+	device           = "MYRIAD"
+	inputFile        = ""
 )
 
 func init() {
 	flag.StringVar(&device, "device", device, "device name")
+	flag.IntVar(&image_width, "width", image_width, "video width")
+	flag.IntVar(&image_height, "height", image_height, "video height")
+	flag.Float64Var(&detectionPadding, "padding", detectionPadding, "detection padding of image")
+	flag.Float64Var(&maxError, "maxError", maxError, "maximum error")
+	flag.IntVar(&minSamples, "minSamples", minSamples, "minimum samples before identifying person")
+	flag.StringVar(&saveFile, "saveFile", saveFile, "save file between executions")
+	flag.StringVar(&inputFile, "inputFile", inputFile, "input file for video (blank for stdin)")
 }
 
 func scaleRectangle(r image.Rectangle, factor float32) image.Rectangle {
@@ -94,8 +103,18 @@ func main() {
 
 	defer multiModal.Close()
 
+	var input io.ReadCloser = os.Stdin
+	if inputFile != "" {
+		if f, err := os.OpenFile(inputFile, os.O_RDONLY, 0660); err != nil {
+			log.Fatal(err)
+		} else {
+			input = f
+		}
+		defer input.Close()
+	}
+
 	reader := detector.RGB24Reader{
-		Reader: os.Stdin,
+		Reader: input,
 		Rect:   image.Rect(0, 0, image_width, image_height),
 	}
 
@@ -112,16 +131,14 @@ func main() {
 			break
 		} else {
 
-//                        if f, err := os.OpenFile("frame.jpg", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
-//                                log.Print(err)
-//                                return
-//                        } else {
-//                                jpeg.Encode(f, rgb, &jpeg.Options{90})
-//
-//                        }
+			//                        if f, err := os.OpenFile("frame.jpg", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
+			//                                log.Print(err)
+			//                                return
+			//                        } else {
+			//                                jpeg.Encode(f, rgb, &jpeg.Options{90})
+			//
+			//                        }
 
-					
-			
 			detections := det.InferRGB(rgb)
 
 			log.Printf("found: %d", len(detections))
@@ -130,7 +147,7 @@ func main() {
 				// log.Printf("%d: confidence: %f, (%d %d) - (%d %d)", i, d.Confidence, d.Rect.Min.X, d.Rect.Min.Y, d.Rect.Max.X, d.Rect.Max.Y)
 
 				// padd the rectangle to get more of the face
-				r := scaleRectangle(d.Rect, detectionPadding)
+				r := scaleRectangle(d.Rect, float32(detectionPadding))
 
 				if !r.In(reader.Rect) {
 					// out of bounds
@@ -161,7 +178,7 @@ func main() {
 
 				log.Printf("nearest dist: %d prob %f", dist.Id, erf)
 
-				if dist.Count > minSamples && erf < maxError {
+				if dist.Count > minSamples && erf < float32(maxError) {
 					os.MkdirAll(fmt.Sprintf("faces/%d", dist.Id), 0770)
 
 					jpegName = fmt.Sprintf("faces/%d/face%05d.jpg", dist.Id, item)
