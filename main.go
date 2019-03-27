@@ -17,7 +17,7 @@ import (
 
 var (
 	image_width              = 1920
-	image_height             = 1080
+	image_height             = 1088
 	num_channels             = 3
 	detectionPadding float32 = 1.275
 	maxError         float32 = 0.15
@@ -154,6 +154,17 @@ func main() {
 			log.Print(err)
 			break
 		} else {
+
+//                        if f, err := os.OpenFile("frame.jpg", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660); err != nil {
+//                                log.Print(err)
+//                                return
+//                        } else {
+//                                jpeg.Encode(f, rgb, &jpeg.Options{90})
+//
+//                        }
+
+					
+			
 			detections := det.InferRGB(rgb)
 
 			log.Printf("found: %d", len(detections))
