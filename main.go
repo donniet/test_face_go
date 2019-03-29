@@ -91,7 +91,7 @@ func main() {
 	defer det.Close()
 	defer classer.Close()
 
-	multiModal := detector.NewMultiModal(128, 1024)
+	multiModal := detector.NewMultiModal(classer.EmbeddingSize(), 1024)
 
 	if f, err := os.OpenFile(saveFile, os.O_RDONLY, 0660); err != nil {
 		log.Printf("error opening save file: %v, continuing empty", err)
