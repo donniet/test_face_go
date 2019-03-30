@@ -168,13 +168,16 @@ func main() {
 
 				dist := multiModal.Find(classification.Embedding)
 
-				embeddingBytes, _ := json.Marshal(classification.Embedding)
+				erf, d := dist.Erf(classification.Embedding)
+
+				embeddingBytes, _ := json.Marshal(map[string]interface{}{
+					"embedding": classification.Embedding,
+					"errror":    erf,
+					"distance":  d})
 
 				os.MkdirAll("faces/unknown", 0770)
 				jpegName := fmt.Sprintf("faces/unknown/face%05d.jpg", item)
 				embeddingName := fmt.Sprintf("faces/unknown/face%05d.json", item)
-
-				erf := dist.Erf(classification.Embedding)
 
 				log.Printf("nearest dist: %d prob %f", dist.Id, erf)
 
